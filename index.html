@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuiz RBT Tingkatan 3: Bab 1 Reka Bentuk Mekatronik</title>
+    <style>
+        :root {
+            --primary: #E67E22;
+            --secondary: #2980B9;
+            --correct: #2ECC71;
+            --wrong: #E74C3C;
+            --dark: #2C3E50;
+            --light: #FEF9E7;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body { background: linear-gradient(135deg, #fceabb 0%, #f8b500 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 15px; }
+        .quiz-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); width: 100%; max-width: 650px; padding: 25px; overflow: hidden; }
+
+        /* Skrin Mula */
+        .start-screen { text-align: center; }
+        .start-screen h1 { color: var(--dark); margin-bottom: 10px; font-size: 1.6rem; }
+        .start-screen p { color: #555; margin-bottom: 20px; font-size: 0.95rem; }
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--dark); }
+        .input-group input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 1rem; outline: none; }
+        .input-group input:focus { border-color: var(--primary); }
+
+        /* Skrin Kuiz */
+        .header-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: bold; color: var(--dark); }
+        .timer { background: #ffeaa7; padding: 6px 12px; border-radius: 20px; color: #d63031; font-size: 0.9rem; }
+
+        .progress-container { background: #e0e0e0; height: 10px; border-radius: 5px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar { background: var(--primary); height: 100%; width: 0%; transition: width 0.3s ease; }
+
+        .question-text { font-size: 1.1rem; color: var(--dark); margin-bottom: 20px; line-height: 1.4; font-weight: 600; }
+
+        /* Pilihan Jawapan Objektif & Dropdown */
+        .options-grid { display: grid; gap: 10px; margin-bottom: 15px; }
+        .option-btn { background: var(--light); border: 2px solid #f9e79f; border-radius: 12px; padding: 12px 15px; text-align: left; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; color: var(--dark); }
+        .option-btn:hover:not(:disabled) { border-color: var(--primary); background: #fef5e7; }
+        .option-btn.correct { background: #d4edda !important; border-color: var(--correct) !important; color: #155724; font-weight: bold; }
+        .option-btn.wrong { background: #f8d7da !important; border-color: var(--wrong) !important; color: #721c24; }
+
+        .select-option { width: 100%; padding: 12px; border: 2px solid #f9e79f; border-radius: 12px; background: var(--light); font-size: 1rem; color: var(--dark); margin-bottom: 15px; outline: none; }
+
+        .explanation-box { background: #ebf5fb; border-left: 5px solid var(--secondary); padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9rem; color: #1b4965; display: none; line-height: 1.4; }
+
+        /* Butang Utama */
+        .btn-main { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 25px; font-size: 1rem; cursor: pointer; width: 100%; font-weight: bold; transition: background 0.2s; }
+        .btn-main:hover { background: #d35400; }
+        .btn-main:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* Skrin Keputusan */
+        .result-screen { text-align: center; display: none; }
+        .score-circle { width: 120px; height: 120px; border-radius: 50%; background: var(--secondary); color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; margin: 20px auto; flex-direction: column; }
+        .score-circle span { font-size: 0.8rem; font-weight: normal; }
+
+        /* Papan Skor */
+        .leaderboard-box { margin-top: 25px; text-align: left; background: #f8f9fa; padding: 15px; border-radius: 12px; max-height: 200px; overflow-y: auto; }
+        .leaderboard-box h3 { margin-bottom: 10px; font-size: 1rem; color: var(--dark); border-bottom: 2px solid #ddd; padding-bottom: 5px; }
+        .leaderboard-item { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.9rem; border-bottom: 1px dashed #eee; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-card">
+    <!-- Skrin Mula / Isi Nama -->
+    <div id="start-screen" class="start-screen">
+        <h1>Kuiz RBT Tingkatan 3</h1>
+        <p>Bab 1: Reka Bentuk Mekatronik (50 Soalan)</p>
+        <div class="input-group">
+            <label for="player-name">Masukkan Nama Anda:</label>
+            <input type="text" id="player-name" placeholder="Contoh: Ali bin Ahmad" autocomplete="off">
+        </div>
+        <button class="btn-main" onclick="startQuiz()">Mula Kuiz</button>
+    </div>
+
+    <!-- Skrin Utama Kuiz -->
+    <div id="quiz-screen" style="display: none;">
+        <div class="header-info">
+            <span id="player-display">Pemain: -</span>
+            <span class="timer" id="timer-display">⏱️ Masa: 45:00</span>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div class="header-info" style="margin-bottom: 10px;">
+            <span id="question-number">Soalan 1/50</span>
+            <span id="score-live">Markah: 0</span>
+        </div>
+
+        <div class="question-text" id="question-text">Teks soalan akan dipaparkan di sini...</div>
+
+        <!-- Pilihan Soalan Objektif -->
+        <div class="options-grid" id="options-container"></div>
+
+        <!-- Pilihan Soalan Subjektif / Dropdown -->
+        <div id="dropdown-container" style="display: none;">
+            <select id="dropdown-select" class="select-option">
+                <option value="">-- Pilih Jawapan Yang Betul --</option>
+            </select>
+        </div>
+
+        <div class="explanation-box" id="explanation-box"></div>
+
+        <button class="btn-main" id="next-btn" onclick="nextQuestion()" disabled>Seterusnya</button>
+    </div>
+
+    <!-- Skrin Keputusan & Leaderboard -->
+    <div id="result-screen" class="result-screen">
+        <h2>Tahniah! Kuiz Tamat</h2>
+        <p id="final-player-name" style="margin-top: 5px; color: #555;"></p>
+        
+        <div class="score-circle" id="score-circle">
+            <div id="final-score">0</div>
+            <span id="final-percentage">0%</span>
+        </div>
+
+        <p id="feedback-text" style="font-weight: bold; margin-bottom: 15px; color: var(--dark);"></p>
+
+        <button class="btn-main" onclick="location.reload()">Cuba Lagi</button>
+
+        <div class="leaderboard-box">
+            <h3>🏆 Papan Skor Kedudukan (Leaderboard)</h3>
+            <div id="leaderboard-list">Tiada rekod lagi.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Data Soalan RBT Tingkatan 3 Bab 1 (30 Objektif + 20 Padanan/Subjektif)
+const questions = [
+    // 30 SOALAN OBJEKTIF (1 - 30)
+    { type: 'mcq', q: "1. Maksud reka bentuk mekatronik ialah gabungan disiplin ilmu elektrik, mekanikal, elektronik, kawalan dan...", options: ["Pengaturcaraan", "Pemasaran", "Pembuatan", "Pengurusan"], ans: 0, exp: "Mekatronik menggabungkan 5 elemen: Elektrik, Mekanikal, Elektronik, Kawalan, dan Pengaturcaraan." },
+    { type: 'mcq', q: "2. Siapakah yang memperkenalkan istilah 'Mekatronik' pada tahun 1969?", options: ["Tetsuro Mori", "Alexander Graham Bell", "Nikola Tesla", "Thomas Edison"], ans: 0, exp: "Istilah mekatronik diperkenalkan oleh Tetsuro Mori, seorang jurutera syarikat Yaskawa Electric Corporation di Jepun pada tahun 1969." },
+    { type: 'mcq', q: "3. Apakah matlamat utama hasil produk reka bentuk mekatronik?", options: ["Menghasilkan produk automatik atau separa automatik", "Meningkatkan kos pembuatan", "Memanjangkan proses kerja manual", "Mengurangkan penggunaan litar bersepadu"], ans: 0, exp: "Matlamat utama adalah untuk menghasilkan produk atau sistem yang berfungsi secara automatik atau separa automatik." },
+    { type: 'mcq', q: "4. Komponen manakah yang tergolong dalam Sistem Elektrik?", options: ["Bateri dan pengubah", "Gear dan galas bebola", "Diod dan kapasitor", "Mikropengawal dan perisian"], ans: 0, exp: "Sistem elektrik membekalkan kuasa dan merangkumi bateri, bekalan kuasa (AT/AU), serta pengubah." },
+    { type: 'mcq', q: "5. Antara berikut, yang manakah merupakan komponen Sistem Mekanikal?", options: ["Gear, takal, dan tali sawat", "Penderia dan diod", "Papan litar dan pematuh", "Pengaturcara C++"], ans: 0, exp: "Sistem mekanikal berfungsi penghantar gerakan seperti gear, rantai, takal, tali sawat, dan galas bebola." },
+    { type: 'mcq', q: "6. Fungsi Sistem Elektronik dalam produk mekatronik ialah...", options: ["Litar dan komponen elektronik seperti penderia untuk pemprosesan isyarat", "Membekalkan arus elektrik voltan tinggi sahaja", "Menghasilkan gerakan fizikal mekanikal", "Menulis bahasa pengaturcaraan"], ans: 0, exp: "Sistem elektronik terdiri daripada litar, papan litar, penderia (sensor), diod, dan kapasitor." },
+    { type: 'mcq', q: "7. Bahasa pengaturcaraan manakah yang biasa digunakan dalam Sistem Kawalan dan Pengaturcaraan?", options: ["C++, Python, Java", "HTML, CSS, SQL", "Photoshop, Illustrator", "Excel, Word, Access"], ans: 0, exp: "Pengaturcaraan mikropengawal menggunakan bahasa seperti C++, Python, Java, dan lain-lain." },
+    { type: 'mcq', q: "8. Aliran asas operasi bagi gambar rajah blok sistem mekatronik ialah...", options: ["Input → Proses → Output", "Proses → Input → Output", "Output → Proses → Input", "Input → Output → Proses"], ans: 0, exp: "Aliran asas operasi mekatronik sentiasa bermula dengan Input, diolah dalam Proses, dan menghasilkan Output." },
+    { type: 'mcq', q: "9. Dalam pintu gelangsar automatik, apakah komponen yang bertindak sebagai Input?", options: ["Penderia gerakan (Motion sensor)", "Motor AU", "Takal dan tali sawat", "Pintu kaca"], ans: 0, exp: "Penderia gerakan mengesan kehadiran objek/manusia dan menghantar isyarat (Input) kepada pemproses." },
+    { type: 'mcq', q: "10. Dalam mesin basuh automatik, pemutar dram digerakkan oleh gabungan elemen...", options: ["Sistem Mekanikal dan Elektrik", "Sistem Pengaturcaraan sahaja", "Sistem Hidraulik", "Sistem Pneumatik"], ans: 0, exp: "Motor (Elektrik) memutar tali sawat dan takal/gear (Mekanikal) untuk memusingkan dram basuhan." },
+    { type: 'mcq', q: "11. Antara produk berikut, yang manakah BUKAN contoh produk mekatronik?", options: ["Basikal kayuh manual", "Kereta kawalan jauh", "Mesin basuh automatik", "Pintu gelangsar automatik"], ans: 1, exp: "Basikal kayuh manual tidak mempunyai sistem elektronik, kawalan, mahupun pengaturcaraan." },
+    { type: 'mcq', q: "12. Fungsi penderia (sensor) dalam kereta kawalan jauh berautonomi ialah...", options: ["Mengesan halangan di hadapan", "Membekalkan tenaga elektrik", "Memusingkan roda fizikal", "Mengubah voltan arus"], ans: 0, exp: "Penderia infra-merah / ultrasonik mengesan halangan dan hantar data kepada mikropengawal." },
+    { type: 'mcq', q: "13. Apakah peranti kawalan utama yang menerima data input dan memprosesnya mengikut atur cara?", options: ["Mikropengawal (Microcontroller)", "Bateri", "Diod pemancar cahaya", "Rantai mekanikal"], ans: 0, exp: "Mikropengawal ialah 'otak' yang menerima input, memproses, dan menghantar arahan output." },
+    { type: 'mcq', q: "14. Langkah pertama dalam membuat pengubahsuaian produk mekatronik ialah...", options: ["Menghasilkan lakaran cadangan pengubahsuaian", "Membeli komponen mahal", "Membuat ujian kefungsian terus", "Membakar papan litar"], ans: 0, exp: "Pengubahsuaian bermula dengan merancang dan menghasilkan lakaran cadangan berdasarkan rajah blok." },
+    { type: 'mcq', q: "15. Berapakah kali ujian kefungsian biasanya diuji untuk memastikan keberkesanan produk?", options: ["3 kali", "1 kali", "10 kali", "100 kali"], ans: 0, exp: "Ujian kefungsian secara standard dilakukan sebanyak 3 kali untuk mendapatkan purata dan ketepatan data." },
+    { type: 'mcq', q: "16. Arus Terus (AT) biasanya dibekalkan oleh komponen...", options: ["Bateri", "Penjana kuasa stesen empangan", "Soket dinding rumah (AU)", "Pengubah voltan tinggi"], ans: 0, exp: "Bateri membekalkan Arus Terus (AT) yang stabil untuk komponen elektronik kecil." },
+    { type: 'mcq', q: "17. Mengapakah galas bebola (ball bearing) digunakan dalam sistem mekanikal?", options: ["Mengurangkan geseran dan melancarkan gerakan", "Meningkatkan Arus Elektrik", "Mengawal kelajuan perisian", "Mengesan haba"], ans: 0, exp: "Galas bebola mengurangkan geseran antara komponen bergerak mekanikal." },
+    { type: 'mcq', q: "18. Komponen elektronik yang berfungsi menyimpan cas elektrik ialah...", options: ["Kapasitor", "Diod", "Perintang", "Geganti"], ans: 0, exp: "Kapasitor menyimpan dan melepaskan cas elektrik dalam litar." },
+    { type: 'mcq', q: "19. Apakah elemen mekatronik yang membolehkan tindakan motor digerakkan secara automatik mengikut logik?", options: ["Sistem Kawalan dan Pengaturcaraan", "Sistem Fizikal sahaja", "Tali sawat", "Galas bebola"], ans: 0, exp: "Sistem kawalan dan pengaturcaraan memberi arahan logik tindakan." },
+    { type: 'mcq', q: "20. Antara berikut, yang manakah bertindak sebagai 'Output' pada kereta kawalan jauh?", options: ["Motor DC / Roda berputar", "Penderia inframerah", "Bateri Lipo", "Atur cara Python"], ans: 0, exp: "Hasil pergerakan roda (oleh motor DC) ialah Output." },
+    { type: 'mcq', q: "21. Apakah fungsi diod dalam sistem elektronik?", options: ["Membenarkan arus mengalir satu arah sahaja", "Meningkatkan daya kilas gear", "Mengesan suhu bilik", "Memancarkan gelombang radio"], ans: 0, exp: "Diod mengalirkan arus dalam satu arah sahaja untuk perlindungan litar." },
+    { type: 'mcq', q: "22. Komponen mekanikal yang digunakan untuk memindahkan kuasa putaran antara dua aci sejajar ialah...", options: ["Tali sawat dan takal", "Kapasitor", "Mikropengawal", "Penderia suhu"], ans: 0, exp: "Takal dan tali sawat menghubungkan dan memindahkan kuasa putaran aci." },
+    { type: 'mcq', q: "23. Apakah contoh produk separa automatik?", options: ["Mesin basuh (perlu tekan butang mula)", "Pintu gelangsar di kompleks yang bergerak terus", "Lampu jalan berkuasa solar automatik", "Kipas angin tanpa kawalan"], ans: 0, exp: "Separa automatik memerlukan sedikit campur tangan manusia seperti menekan butang mendaftar program." },
+    { type: 'mcq', q: "24. Dalam rajah blok mekatronik, blok 'Proses' mengandungi...", options: ["Mikropengawal / Unit Pemprosesan", "Penderia pautan", "Motor dan Lampu LED", "Suis tekan"], ans: 0, exp: "Unit pemprosesan (mikropengawal) berada dalam blok Proses." },
+    { type: 'mcq', q: "25. Apakah tujuan membuat pengubahsuaian pada produk sedia ada?", options: ["Meningkatkan fungsi dan nilai kebolehgunaan", "Menambah berat produk sahaja", "Mengurangkan jangka hayat", "Menghilangkan ciri automatik"], ans: 0, exp: "Pengubahsuaian dibuat bagi menambah baik fungsi, keselamatan, dan prestasi produk." },
+    { type: 'mcq', q: "26. Jenis bateri yang boleh diisi semula kuasanya sesuai untuk kereta kawalan jauh ialah...", options: ["Bateri Boleh Dicas Semula (Rechargeable)", "Bateri Zink-Karbon biasa", "Kapasitor seramik", "Pengubah AU"], ans: 0, exp: "Bateri Boleh Dicas Semula jimat dan sesuai untuk kegunaan arus tinggi berulang." },
+    { type: 'mcq', q: "27. Dalam sistem kawalan, apakah fungsi 'Litar Bersepadu' (IC / Integrated Circuit)?", options: ["Pemprosesan isyarat elektronik yang ringkas dan padat", "Memutar roda fizikal", "Menghasil daya mekanikal", "Membekalkan kuasa AU"], ans: 0, exp: "Litar bersepadu menggabungkan ribuan komponen elektronik ringkas dalam satu cip." },
+    { type: 'mcq', q: "28. Pemampat udara dan silinder udara merupakan contoh bagi sistem...", options: ["Pneumatik", "Elektronik", "Pengaturcaraan C++", "AT/AU"], ans: 0, exp: "Sistem pneumatik menggunakan tekanan udara (kadangkala digabungkan dalam mekatronik industri)." },
+    { type: 'mcq', q: "29. Langkah keselamatan utama semasa membuat penyambungan litar mekatronik ialah...", options: ["Memastikan bekalan kuasa dimatikan sebelum menyambung litar", "Menyentuh litar dengan tangan basah", "Menggunakan dawai tanpa penebat", "Menyalakan litar terus tanpa semakan"], ans: 0, exp: "Mematikan suis kuasa elak litar pintas dan kejutan elektrik." },
+    { type: 'mcq', q: "30. Apakah dokumentasi penting yang dihasilkan sebelum membina atur cara?", options: ["Carta alir (Flowchart) / Algoritma", "Lakaran grafik hiasan", "Borang soal selidik", "Resit pembelian komponen"], ans: 0, exp: "Carta alir atau psudokod menyusun aliran pengaturcaraan secara logik." },
+
+    // 20 SOALAN SUBJEKTIF / PADANAN (31 - 50)
+    { type: 'select', q: "31. [Padanan Subjektif] Komponen 'Gear' tergolong di bawah sistem manakah?", options: ["Sistem Mekanikal", "Sistem Elektrik", "Sistem Elektronik", "Sistem Pengaturcaraan"], ans: "Sistem Mekanikal", exp: "Gear ialah elemen Sistem Mekanikal untuk memindahkan kuasa dan pergerakan." },
+    { type: 'select', q: "32. [Padanan Subjektif] Komponen 'Penderia Ultrasonik' tergolong di bawah sistem manakah?", options: ["Sistem Elektronik", "Sistem Mekanikal", "Sistem Elektrik", "Sistem Kawalan"], ans: "Sistem Elektronik", exp: "Penderia mengesan isyarat dan tergolong dalam Sistem Elektronik." },
+    { type: 'select', q: "33. [Padanan Subjektif] 'Bateri Akumulator' tergolong dalam sistem...", options: ["Sistem Elektrik", "Sistem Mekanikal", "Sistem Pengaturcaraan", "Sistem Luaran"], ans: "Sistem Elektrik", exp: "Bateri membekalkan kuasa elektrik AT." },
+    { type: 'select', q: "34. [Padanan Subjektif] Bahasa 'Python' digunakan dalam elemen...", options: ["Sistem Kawalan dan Pengaturcaraan", "Sistem Mekanikal", "Sistem Elektrik", "Sistem Pneumatik"], ans: "Sistem Kawalan dan Pengaturcaraan", exp: "Python ialah salah satu bahasa pengaturcaraan." },
+    { type: 'select', q: "35. [Padanan Subjektif] Komponen 'Tali Sawat dan Takal' bertindak sebagai...", options: ["Sistem Mekanikal", "Sistem Elektrik", "Sistem Kawalan", "Sistem Input"], ans: "Sistem Mekanikal", exp: "Takal dan tali sawat menghantar gerakan putaran." },
+    { type: 'select', q: "36. [Padanan Subjektif] 'Kapasitor dan Diod' tergolong di bawah elemen...", options: ["Sistem Elektronik", "Sistem Elektrik", "Sistem Mekanikal", "Sistem Kawalan"], ans: "Sistem Elektronik", exp: "Kapasitor & diod ialah komponen asas litar elektronik." },
+    { type: 'select', q: "37. [Padanan Subjektif] 'Pintu Gelangsar Automatik' bertindak membuka pintu apabila penderia mengesan...", options: ["Pergerakan / Kehadiran Manusia", "Suhu Bilik", "Kelembapan Udara", "Bunyi Suara"], ans: "Pergerakan / Kehadiran Manusia", exp: "Penderia gerakan pintu gelangsar mengesan susut fizikal objek/manusia." },
+    { type: 'select', q: "38. [Padanan Subjektif] Aliran 'Proses' dalam rajah blok mekatronik diwakili oleh peranti...", options: ["Mikropengawal (Microcontroller)", "Suis Tekan", "Motor DC", "Lampu LED"], ans: "Mikropengawal (Microcontroller)", exp: "Mikropengawal memproses isyarat input." },
+    { type: 'select', q: "39. [Padanan Subjektif] Peranti yang menghasilkan tindakan akhir fizikal dinamakan...", options: ["Output / Pematuh (Actuator)", "Input / Penderia", "Proses / CPU", "Pengubah Voltan"], ans: "Output / Pematuh (Actuator)", exp: "Output seperti motor/pematuh melaksanakan gerakan akhir." },
+    { type: 'select', q: "40. [Padanan Subjektif] Ujian yang dilakukan untuk memastikan produk berfungsi mengikut spesifikasi ialah...", options: ["Ujian Kefungsian", "Ujian Kemusnahan", "Ujian Asid", "Ujian Kebocoran Haba"], ans: "Ujian Kefungsian", exp: "Ujian kefungsian mengesahkan semua elemen berfungsi sempurna." },
+    { type: 'select', q: "41. [Padanan Subjektif] Arus daripada soket elektrik rumah dinamakan...", options: ["Arus Ulang-Alik (AU)", "Arus Terus (AT)", "Arus Bebas", "Arus Mikro"], ans: "Arus Ulang-Alik (AU)", exp: "Bekalan kuasa domestik rumah menggunakan Arus Ulang-Alik (AU)." },
+    { type: 'select', q: "42. [Padanan Subjektif] Komponen yang menukarkan voltan AU kepada AT dinamakan...", options: ["Pengubah / Pengatur Voltan", "Galas Bebola", "Tali Sawat", "Penderia LDR"], ans: "Pengubah / Pengatur Voltan", exp: "Pengubah/Penerus menukar dan mengawal voltan AU ke AT." },
+    { type: 'select', q: "43. [Padanan Subjektif] 'Penderia LDR' mengesan perubahan...", options: ["Cahaya", "Suhu", "Jarak", "Tekanan"], ans: "Cahaya", exp: "LDR (Light Dependent Resistor) mengesan keamatan cahaya." },
+    { type: 'select', q: "44. [Padanan Subjektif] Fungsi utama galas bebola (ball bearing) ialah...", options: ["Mengurangkan Geseran", "Menjana Kuasa", "Menyimpan Cas", "Memproses Atur cara"], ans: "Mengurangkan Geseran", exp: "Galas bebola mengurangkan rintangan geseran pergerakan aci." },
+    { type: 'select', q: "45. [Padanan Subjektif] 'Buzzer' dalam litar mekatronik bertindak sebagai peranti...", options: ["Output (Bunyi)", "Input (Penderia)", "Proses Logik", "Pengubah Kuasa"], ans: "Output (Bunyi)", exp: "Buzzer menghasilkan output dalam bentuk isyarat bunyi." },
+    { type: 'select', q: "46. [Padanan Subjektif] 'Suis Tekan Tutup' bertindak sebagai peranti...", options: ["Input (Isyarat Masuk)", "Output (Tindakan)", "Proses Utama", "Pengaturcaraan"], ans: "Input (Isyarat Masuk)", exp: "Suis menghantar isyarat ON/OFF (Input) apabila ditekan." },
+    { type: 'select', q: "47. [Padanan Subjektif] Gabungan pengaturcaraan dan litar kawalan dinamakan...", options: ["Sistem Kawalan dan Pengaturcaraan", "Sistem Fizikal Mekanikal", "Sistem Elektrik Asas", "Sistem Manual"], ans: "Sistem Kawalan dan Pengaturcaraan", exp: "Elemen ini menguruskan logik operasi mekatronik." },
+    { type: 'select', q: "48. [Padanan Subjektif] Reka bentuk mekatronik mula diperkenalkan pada tahun...", options: ["1969", "1989", "1999", "2005"], ans: "1969", exp: "Diperkenalkan oleh Tetsuro Mori pada tahun 1969." },
+    { type: 'select', q: "49. [Padanan Subjektif] Kereta kawalan jauh biasa bertukar menjadi automatik jika ditambah...", options: ["Penderia dan Pengaturcaraan Kawalan", "Bateri bersaiz lebih besar", "Warna cat baharu", "Roda besi"], ans: "Penderia dan Pengaturcaraan Kawalan", exp: "Penambahan penderia dan kod membolehkan fungsi autonomi/automatik." },
+    { type: 'select', q: "50. [Padanan Subjektif] Ujian kefungsian produk mekatronik perlu diulangi sebanyak...", options: ["3 Kali", "1 Kali", "5 Kali", "10 Kali"], ans: "3 Kali", exp: "Silibus RBT menghendaki ujian dilaksanakan sekurang-kurangnya 3 kali bagi konsistensi." }
+];
+
+// Pembolehubah Global
+let currentQIndex = 0;
+let score = 0;
+let playerName = "";
+let timerInterval;
+let timeLeft = 45 * 60; // 45 Minit dalam saat
+let selectedAnswer = null;
+
+// Fungsi Mula Kuiz
+function startQuiz() {
+    const nameInput = document.getElementById('player-name').value.trim();
+    if (!nameInput) {
+        alert("Sila masukkan nama anda terlebih dahulu!");
+        return;
+    }
+    playerName = nameInput;
+    document.getElementById('player-display').innerText = "Pemain: " + playerName;
+
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('quiz-screen').style.display = 'block';
+
+    startTimer();
+    loadQuestion();
+}
+
+// Fungsi Pemasa (Timer)
+function startTimer() {
+    timerInterval = setInterval(() => {
+        timeLeft--;
+        let mins = Math.floor(timeLeft / 60);
+        let secs = timeLeft % 60;
+        document.getElementById('timer-display').innerText = `⏱️ Masa: ${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            alert("Masa telah tamat!");
+            finishQuiz();
+        }
+    }, 1000);
+}
+
+// Memuatkan Soalan
+function loadQuestion() {
+    selectedAnswer = null;
+    const qData = questions[currentQIndex];
+
+    // Kemaskini UI Header & Progress
+    document.getElementById('question-number').innerText = `Soalan ${currentQIndex + 1}/${questions.length}`;
+    document.getElementById('progress-bar').style.width = `${((currentQIndex + 1) / questions.length) * 100}%`;
+    document.getElementById('question-text').innerText = qData.q;
+    document.getElementById('explanation-box').style.display = 'none';
+    document.getElementById('next-btn').disabled = true;
+
+    const optContainer = document.getElementById('options-container');
+    const dropContainer = document.getElementById('dropdown-container');
+    const dropSelect = document.getElementById('dropdown-select');
+
+    optContainer.innerHTML = '';
+    dropSelect.innerHTML = '<option value="">-- Pilih Jawapan Yang Betul --</option>';
+
+    if (qData.type === 'mcq') {
+        optContainer.style.display = 'grid';
+        dropContainer.style.display = 'none';
+
+        qData.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = `${String.fromCharCode(65 + idx)}. ${opt}`;
+            btn.onclick = () => checkMCQ(idx, btn);
+            optContainer.appendChild(btn);
+        });
+    } else if (qData.type === 'select') {
+        optContainer.style.display = 'none';
+        dropContainer.style.display = 'block';
+
+        // Rawakkan/Susun pilihan dropdown
+        let opts = [...qData.options];
+        opts.forEach(opt => {
+            const el = document.createElement('option');
+            el.value = opt;
+            el.innerText = opt;
+            dropSelect.appendChild(el);
+        });
+
+        dropSelect.onchange = () => checkSelect(dropSelect.value);
+    }
+}
+
+// Semak Jawapan Objektif (MCQ)
+function checkMCQ(selectedIndex, btnElement) {
+    if (selectedAnswer !== null) return; // Elak tekan banyak kali
+    selectedAnswer = selectedIndex;
+
+    const qData = questions[currentQIndex];
+    const buttons = document.querySelectorAll('.option-btn');
+
+    if (selectedIndex === qData.ans) {
+        btnElement.classList.add('correct');
+        score += 2; // 2 markah setiap soalan (Jumlah: 100 markah)
+    } else {
+        btnElement.classList.add('wrong');
+        buttons[qData.ans].classList.add('correct');
+    }
+
+    buttons.forEach(b => b.disabled = true);
+    document.getElementById('score-live').innerText = `Markah: ${score}`;
+
+    // Paparkan penerangan
+    const expBox = document.getElementById('explanation-box');
+    expBox.innerHTML = `<strong>Penerangan:</strong> ${qData.exp}`;
+    expBox.style.display = 'block';
+
+    document.getElementById('next-btn').disabled = false;
+}
+
+// Semak Jawapan Subjektif/Dropdown
+function checkSelect(selectedValue) {
+    if (!selectedValue) {
+        document.getElementById('next-btn').disabled = true;
+        return;
+    }
+
+    const qData = questions[currentQIndex];
+    selectedAnswer = selectedValue;
+
+    const expBox = document.getElementById('explanation-box');
+    if (selectedValue === qData.ans) {
+        expBox.innerHTML = `<span style="color: var(--correct); font-weight:bold;">✔ Jawapan Betul!</span><br><strong>Penerangan:</strong> ${qData.exp}`;
+        if (!dropSelectDisabled) { score += 2; }
+    } else {
+        expBox.innerHTML = `<span style="color: var(--wrong); font-weight:bold;">✖ Jawapan Kurang Tepat. Jawapan betul: ${qData.ans}</span><br><strong>Penerangan:</strong> ${qData.exp}`;
+    }
+
+    document.getElementById('score-live').innerText = `Markah: ${score}`;
+    expBox.style.display = 'block';
+    document.getElementById('next-btn').disabled = false;
+}
+
+let dropSelectDisabled = false;
+
+// Beralih ke soalan seterusnya
+function nextQuestion() {
+    currentQIndex++;
+    if (currentQIndex < questions.length) {
+        loadQuestion();
+    } else {
+        finishQuiz();
+    }
+}
+
+// Tamatkan Kuiz & Simpan Rekod
+function finishQuiz() {
+    clearInterval(timerInterval);
+    document.getElementById('quiz-screen').style.display = 'none';
+    document.getElementById('result-screen').style.display = 'block';
+
+    document.getElementById('final-player-name').innerText = `Pemain: ${playerName}`;
+    document.getElementById('final-score').innerText = score;
+    document.getElementById('final-percentage').innerText = `${score}%`;
+
+    // Maklum balas
+    const feedback = document.getElementById('feedback-text');
+    if (score >= 80) {
+        feedback.innerText = "Cemerlang! Anda sangat menguasai Bab 1 Mekatronik!";
+        feedback.style.color = "var(--correct)";
+    } else if (score >= 50) {
+        feedback.innerText = "Syabas! Keputusan yang baik, tingkatkan usaha lagi.";
+        feedback.style.color = "var(--primary)";
+    } else {
+        feedback.innerText = "Boleh cuba lagi untuk memantapkan pemahaman anda!";
+        feedback.style.color = "var(--wrong)";
+    }
+
+    saveToLeaderboard(playerName, score);
+    displayLeaderboard();
+}
+
+// Simpan ke localStorage
+function saveToLeaderboard(name, scoreVal) {
+    let leaderboard = JSON.parse(localStorage.getItem('rbt_leaderboard')) || [];
+    leaderboard.push({ name: name, score: scoreVal, date: new Date().toLocaleDateString() });
+    
+    // Susun mengikut skor tertinggi
+    leaderboard.sort((a, b) => b.score - a.score);
+    
+    // Simpan 10 teratas sahaja
+    leaderboard = leaderboard.slice(0, 10);
+    localStorage.setItem('rbt_leaderboard', JSON.stringify(leaderboard));
+}
+
+// Paparkan Leaderboard
+function displayLeaderboard() {
+    let leaderboard = JSON.parse(localStorage.getItem('rbt_leaderboard')) || [];
+    const container = document.getElementById('leaderboard-list');
+
+    if (leaderboard.length === 0) {
+        container.innerHTML = "Tiada rekod lagi.";
+        return;
+    }
+
+    container.innerHTML = leaderboard.map((item, index) => `
+        <div class="leaderboard-item">
+            <span><strong>#${index + 1} ${item.name}</strong></span>
+            <span>${item.score} / 100 Markah (${item.date})</span>
+        </div>
+    `).join('');
+}
+</script>
+
+</body>
+</html>
